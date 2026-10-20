@@ -1,0 +1,52 @@
+name: Build and release
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild and replace the release even if it already exists"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect upstream version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(gh api repos/TechnitiumSoftware/DnsServer/releases/latest --jq .tag_name | sed 's/^v//')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1 && [ "${{ inputs.force }}" != "true" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build packages
+        if: steps.ver.outputs.exists != 'true'
+        run: scripts/build.sh "${{ steps.ver.outputs.version }}"
+
+      - name: Test install (Ubuntu 24.04/26.04, Debian 12, RHEL 8/9/10)
+        if: steps.ver.outputs.exists != 'true'
+        run: |
+          scripts/test.sh | tee test.out
+          ! grep -q '^FAIL' test.out
+
+      - name: Publish release
+        if: steps.ver.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="v${{ steps.ver.outputs.version }}"
+          gh release delete "$v" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "$v" dist/*.deb dist/*.rpm \
+            --title "Technitium DNS Server ${v#v}" \
+            --notes "Packages of Technitium DNS Server ${v#v} built from the official portable tarball. See https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md"

@@ -8,27 +8,87 @@ Packages are built for x86_64/amd64 and aarch64/arm64 (Raspberry Pi, Orange Pi, 
 
 ## Install
 
-Download from the [latest release](../../releases/latest).
+### Step 1: make the ASP.NET Core runtime available
 
-Debian / Ubuntu:
+The packages depend on `aspnetcore-runtime-10.0`, which your package manager installs automatically if a repo provides it.
+Ubuntu 24.04 and 26.04 have it in their own repositories, so skip this step there.
 
-    sudo apt install ./technitium-dns-server_<version>_<amd64|arm64>.deb
+On Debian 12/13 (and Raspberry Pi OS or Armbian based on them) add the Microsoft repository:
 
-RHEL / Alma / Rocky:
+```bash
+. /etc/os-release
+curl -fsSL -o /tmp/packages-microsoft-prod.deb "https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb"
+sudo dpkg -i /tmp/packages-microsoft-prod.deb
+sudo apt update
+```
 
-    sudo dnf install ./technitium-dns-server-<version>-1.<x86_64|aarch64>.rpm
+On RHEL, Alma and Rocky 8/9/10:
 
-Then open `http://<host>:5380/`.
+```bash
+sudo rpm -Uvh "https://packages.microsoft.com/config/rhel/$(rpm -E %rhel)/packages-microsoft-prod.rpm"
+```
 
-## ASP.NET Core runtime dependency
+If your RHEL clone already ships .NET 10 in its own repos you can skip this, but it does no harm.
 
-The packages depend on `aspnetcore-runtime-10.0`, which your package manager installs automatically if a repo provides it:
-
-| Distro | Source |
+| Distro | Where `aspnetcore-runtime-10.0` comes from |
 |---|---|
 | Ubuntu 24.04, 26.04 | distro archive |
-| Debian 12, 13 | [Microsoft repo](https://learn.microsoft.com/dotnet/core/install/linux-debian) (`packages-microsoft-prod.deb`) |
+| Debian 12, 13 | [Microsoft repo](https://learn.microsoft.com/dotnet/core/install/linux-debian) |
 | RHEL 8/9/10 and clones | distro AppStream, or the [Microsoft repo](https://learn.microsoft.com/dotnet/core/install/linux-rhel) |
+
+### Step 2a: from the package repository (recommended)
+
+The packages are also published to a Gemfury repository, so `apt` and `dnf` install the latest version and upgrade it with
+the rest of the system. The repo works for both x86_64 and arm64.
+
+Debian, Ubuntu, Raspberry Pi OS, Armbian:
+
+```bash
+echo "deb [trusted=yes] https://apt.fury.io/cloudalbania/ /" | sudo tee /etc/apt/sources.list.d/cloudalbania.list
+sudo apt update
+sudo apt install technitium-dns-server
+```
+
+RHEL, Alma, Rocky:
+
+```bash
+sudo tee /etc/yum.repos.d/cloudalbania.repo <<'EOF'
+[cloudalbania]
+name=CloudAlbania
+baseurl=https://yum.fury.io/cloudalbania/
+enabled=1
+gpgcheck=0
+EOF
+sudo dnf install technitium-dns-server
+```
+
+The repo is not GPG-signed (`trusted=yes` / `gpgcheck=0`), so only use it if you trust that I built it, or install from the
+GitHub release below.
+
+### Step 2b: from the GitHub release
+
+If you would rather not add a repository, download the package from the [latest release](../../releases/latest). This needs
+only `curl`, and no version number: it asks the GitHub API for the latest release and picks the file for your architecture.
+
+Debian, Ubuntu, Raspberry Pi OS, Armbian:
+
+```bash
+curl -fsSLO "$(curl -s https://api.github.com/repos/besmirzanaj/technitium-dns-packages/releases/latest \
+  | grep -o "https://[^\"]*_$(dpkg --print-architecture)\.deb")"
+sudo apt install ./technitium-dns-server_*.deb
+```
+
+RHEL, Alma, Rocky:
+
+```bash
+curl -fsSLO "$(curl -s https://api.github.com/repos/besmirzanaj/technitium-dns-packages/releases/latest \
+  | grep -o "https://[^\"]*\.$(uname -m)\.rpm")"
+sudo dnf install ./technitium-dns-server-*.rpm
+```
+
+Then open `http://<host>:5380/` and set the admin password.
+
+## Testing
 
 Each release is install-tested in CI with one deb (Ubuntu 24.04) and one rpm (AlmaLinux 9). Locally, `scripts/test.sh` covers
 Ubuntu 24.04/26.04, Debian 12/13 and AlmaLinux 8/9/10 on x86_64 or arm64 (`PLATFORM=linux/arm64`). The systemd unit itself is not exercised there (no systemd in containers).

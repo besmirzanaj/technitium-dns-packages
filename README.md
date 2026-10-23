@@ -4,7 +4,7 @@ Unofficial `.deb` and `.rpm` packages of [Technitium DNS Server](https://technit
 `DnsServerPortable.tar.gz`. A daily GitHub Action checks for a new upstream release, builds, tests and publishes it
 under [Releases](../../releases), and pushes them to Gemfury when `GEMFURY_PUSH_URL` is configured.
 
-One architecture-independent package per format (managed .NET code), so it runs on x86_64 and arm64.
+Packages are built for x86_64/amd64 and aarch64/arm64 (Raspberry Pi, Orange Pi, Armbian, etc.). The app is managed .NET code, so the contents are identical; only the package architecture differs.
 
 ## Install
 
@@ -12,11 +12,11 @@ Download from the [latest release](../../releases/latest).
 
 Debian / Ubuntu:
 
-    sudo apt install ./technitium-dns-server_<version>_all.deb
+    sudo apt install ./technitium-dns-server_<version>_<amd64|arm64>.deb
 
 RHEL / Alma / Rocky:
 
-    sudo dnf install ./technitium-dns-server-<version>-1.noarch.rpm
+    sudo dnf install ./technitium-dns-server-<version>-1.<x86_64|aarch64>.rpm
 
 Then open `http://<host>:5380/`.
 
@@ -30,8 +30,8 @@ The packages depend on `aspnetcore-runtime-10.0`, which your package manager ins
 | Debian 12, 13 | [Microsoft repo](https://learn.microsoft.com/dotnet/core/install/linux-debian) (`packages-microsoft-prod.deb`) |
 | RHEL 8/9/10 and clones | distro AppStream, or the [Microsoft repo](https://learn.microsoft.com/dotnet/core/install/linux-rhel) |
 
-Each release is install-tested in clean containers (Ubuntu 24.04/26.04, Debian 12, AlmaLinux 8/9/10; x86_64) by
-`scripts/test.sh`. The systemd unit itself is not exercised there (no systemd in containers).
+Each release is install-tested in CI with one deb (Ubuntu 24.04) and one rpm (AlmaLinux 9). Locally, `scripts/test.sh` covers
+Ubuntu 24.04/26.04, Debian 12/13 and AlmaLinux 8/9/10 on x86_64 or arm64 (`PLATFORM=linux/arm64`). The systemd unit itself is not exercised there (no systemd in containers).
 
 ## Layout
 
@@ -51,7 +51,7 @@ Config and logs are kept on removal; `purge` (deb) deletes them.
 Requires Docker.
 
     scripts/build.sh [version]   # output in dist/
-    scripts/test.sh [targets]    # ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
+    PLATFORM=linux/arm64 scripts/test.sh [targets]   # ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
 
 Not affiliated with Technitium.
 

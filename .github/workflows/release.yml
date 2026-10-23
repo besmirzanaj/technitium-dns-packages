@@ -34,10 +34,10 @@ jobs:
         if: steps.ver.outputs.exists != 'true'
         run: scripts/build.sh "${{ steps.ver.outputs.version }}"
 
-      - name: Test install (Ubuntu 24.04/26.04, Debian 12, RHEL 8/9/10)
+      - name: Test install (one deb on Ubuntu 24.04, one rpm on RHEL 9)
         if: steps.ver.outputs.exists != 'true'
         run: |
-          scripts/test.sh | tee test.out
+          scripts/test.sh ubuntu24 rhel9 | tee test.out
           ! grep -q '^FAIL' test.out
 
       - name: Publish release

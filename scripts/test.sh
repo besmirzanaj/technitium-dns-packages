@@ -1,13 +1,17 @@
 #!/bin/sh
 # Install each package in a clean container (real runtime dependency from distro/Microsoft repos) and probe the server.
-# Usage: scripts/test.sh [target...]   targets: ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
+# Usage: [PLATFORM=linux/arm64] scripts/test.sh [target...]   targets: ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
 set -u
 cd "$(dirname "$0")/.."
 APT='apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null'
 msdeb() { echo "$APT && curl -fsSL -o /tmp/ms.deb https://packages.microsoft.com/config/debian/$1/packages-microsoft-prod.deb && dpkg -i /tmp/ms.deb >/dev/null && apt-get update -qq"; }
 msrpm() { echo "dnf -q -y install util-linux >/dev/null && rpm -Uvh https://packages.microsoft.com/config/rhel/$1/packages-microsoft-prod.rpm >/dev/null"; }
-DEBI='apt-get install -y /dist/technitium-dns-server_*_all.deb'
-RPMI='dnf -y install /dist/technitium-dns-server-*.noarch.rpm'
+case "${PLATFORM:-linux/amd64}" in
+  linux/arm64) DEBARCH=arm64; RPMARCH=aarch64 ;;
+  *)           DEBARCH=amd64; RPMARCH=x86_64 ;;
+esac
+DEBI="apt-get install -y /dist/technitium-dns-server_*_$DEBARCH.deb"
+RPMI="dnf -y install /dist/technitium-dns-server-*.$RPMARCH.rpm"
 run() { # name image setup install
   echo "=== $1 ($2) ==="
   docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD/dist":/dist:ro "$2" sh -c "

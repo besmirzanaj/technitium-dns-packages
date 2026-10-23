@@ -9,7 +9,9 @@ rm -rf stage dist; mkdir -p stage/opt/technitium/dns dist
 curl -fsSL https://download.technitium.com/dns/DnsServerPortable.tar.gz | tar -xz -C stage/opt/technitium/dns
 rm -f stage/opt/technitium/dns/{start.bat,start.sh,systemd.service,openrc.service,DnsServerApp.exe} stage/opt/technitium/dns/*.pdb
 chmod -R go-w stage; find stage -type d -exec chmod 755 {} +; find stage -type f -exec chmod 644 {} +
-for f in deb rpm; do
-  docker run --rm -e VERSION="$VERSION" -v "$PWD":/w -w /w goreleaser/nfpm:latest package -f nfpm.yaml -p $f -t dist/
+for arch in amd64 arm64; do
+  for f in deb rpm; do
+    docker run --rm -e VERSION="$VERSION" -e ARCH=$arch -v "$PWD":/w -w /w goreleaser/nfpm:latest package -f nfpm.yaml -p $f -t dist/
+  done
 done
 ls -l dist

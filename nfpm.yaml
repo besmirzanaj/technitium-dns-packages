@@ -1,5 +1,5 @@
 name: technitium-dns-server
-arch: all
+arch: ${ARCH}
 platform: linux
 version: ${VERSION}
 section: net

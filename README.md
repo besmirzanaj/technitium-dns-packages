@@ -51,7 +51,7 @@ Config and logs are kept on removal; `purge` (deb) deletes them.
 Requires Docker.
 
     scripts/build.sh [version]   # output in dist/
-    scripts/test.sh [targets]    # ubuntu24 ubuntu26 debian12 rhel8 rhel9 rhel10
+    scripts/test.sh [targets]    # ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
 
 Not affiliated with Technitium.
 

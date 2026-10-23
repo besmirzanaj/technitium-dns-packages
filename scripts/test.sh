@@ -1,6 +1,6 @@
 #!/bin/sh
 # Install each package in a clean container (real runtime dependency from distro/Microsoft repos) and probe the server.
-# Usage: scripts/test.sh [target...]   targets: ubuntu24 ubuntu26 debian12 rhel8 rhel9 rhel10
+# Usage: scripts/test.sh [target...]   targets: ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10
 set -u
 cd "$(dirname "$0")/.."
 APT='apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null'
@@ -21,10 +21,11 @@ run() { # name image setup install
     dotnet --list-runtimes
   " >"dist/test-$1.log" 2>&1 && { echo PASS; grep -E 'web console|AspNetCore' "dist/test-$1.log"; } || { echo "FAIL (see dist/test-$1.log)"; tail -8 "dist/test-$1.log"; }
 }
-targets="${*:-ubuntu24 ubuntu26 debian12 rhel8 rhel9 rhel10}"
+targets="${*:-ubuntu24 ubuntu26 debian12 debian13 rhel8 rhel9 rhel10}"
 for t in $targets; do case $t in
   ubuntu24) run $t ubuntu:24.04 "$APT" "$DEBI" ;;
   ubuntu26) run $t ubuntu:26.04 "$APT" "$DEBI" ;;
+  debian13) run $t debian:13 "$(msdeb 13)" "$DEBI" ;;
   debian12) run $t debian:12 "$(msdeb 12)" "$DEBI" ;;
   rhel8)    run $t almalinux:8  "$(msrpm 8)"  "$RPMI" ;;
   rhel9)    run $t almalinux:9  "$(msrpm 9)"  "$RPMI" ;;

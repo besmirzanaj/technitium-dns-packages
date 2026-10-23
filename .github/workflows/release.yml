@@ -50,3 +50,18 @@ jobs:
           gh release create "$v" dist/*.deb dist/*.rpm \
             --title "Technitium DNS Server ${v#v}" \
             --notes "Packages of Technitium DNS Server ${v#v} built from the official portable tarball. See https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md"
+
+      - name: Push to Gemfury
+        if: steps.ver.outputs.exists != 'true'
+        env:
+          GEMFURY_TOKEN: ${{ secrets.GEMFURY_TOKEN }}
+          GEMFURY_ACCOUNT: ${{ vars.GEMFURY_ACCOUNT }}
+        run: |
+          if [ -z "$GEMFURY_TOKEN" ]; then
+            echo "GEMFURY_TOKEN not set, skipping Gemfury push"
+            exit 0
+          fi
+          for f in dist/*.deb dist/*.rpm; do
+            echo "Pushing $f"
+            curl -fsS -F "package=@$f" "https://${GEMFURY_TOKEN}@push.fury.io/${GEMFURY_ACCOUNT:+$GEMFURY_ACCOUNT/}" >/dev/null
+          done

@@ -2,7 +2,7 @@
 
 Unofficial `.deb` and `.rpm` packages of [Technitium DNS Server](https://technitium.com/dns/), built from the official
 `DnsServerPortable.tar.gz`. A daily GitHub Action checks for a new upstream release, builds, tests and publishes it
-under [Releases](../../releases).
+under [Releases](../../releases), and pushes them to Gemfury when `GEMFURY_TOKEN` is configured.
 
 One architecture-independent package per format (managed .NET code), so it runs on x86_64 and arm64.
 
@@ -54,3 +54,8 @@ Requires Docker.
     scripts/test.sh [targets]    # ubuntu24 ubuntu26 debian12 rhel8 rhel9 rhel10
 
 Not affiliated with Technitium.
+
+## Gemfury
+
+The workflow pushes each new release to Gemfury. Set the repo secret `GEMFURY_TOKEN` (a Gemfury push token) and,
+if pushing to an organisation account, the repo variable `GEMFURY_ACCOUNT`. Without the secret the step is skipped.
